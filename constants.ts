@@ -39,6 +39,7 @@ export const PROJECTS_SEED: string[] = [
 export const INITIAL_USERS: User[] = COLLABORATORS_SEED.map((name, index) => ({
   id: name === 'Admin' ? 'admin-id' : `u-${index}`,
   name,
+  email: `${name.toLowerCase().replace(/\s+/g, '.')}@geee.com.br`,
   role: name === 'Admin' ? UserRole.DIRECTOR :
         name === 'Alexandre Meneghel' ? UserRole.COORDINATOR : 
         name === 'Guilherme Rodrigues' ? UserRole.DIRECTOR : UserRole.COLLABORATOR,

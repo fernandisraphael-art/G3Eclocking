@@ -17,12 +17,52 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     const saved = localStorage.getItem('g3eclocking_user');
-    return saved ? JSON.parse(saved) : null;
+    if (saved) {
+      return JSON.parse(saved);
+    }
+    // Default test user
+    const defaultUser = INITIAL_USERS[0];
+    localStorage.setItem('g3eclocking_user', JSON.stringify(defaultUser));
+    return defaultUser;
   });
 
   const [logs, setLogs] = useState<TimeLog[]>(() => {
     const saved = localStorage.getItem('g3eclocking_logs');
-    return saved ? JSON.parse(saved) : [];
+    if (saved) {
+      return JSON.parse(saved);
+    }
+    // Default test logs
+    const today = new Date().toISOString().split('T')[0];
+    const defaultLogs = [
+      {
+        id: "log-1",
+        collaboratorId: INITIAL_USERS[0].id,
+        collaboratorName: INITIAL_USERS[0].name,
+        date: today,
+        projectId: "CBTC – Margem Direita",
+        phase: "LS",
+        activityType: "revisao",
+        hours: 2.00,
+        description: "Revisão de código e testes",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: "log-2",
+        collaboratorId: INITIAL_USERS[0].id,
+        collaboratorName: INITIAL_USERS[0].name,
+        date: today,
+        projectId: "CBTC – Margem Direita",
+        phase: "LS",
+        activityType: "implementacao",
+        hours: 5.00,
+        description: "Implementação de novas funcionalidades",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+    ];
+    localStorage.setItem('g3eclocking_logs', JSON.stringify(defaultLogs));
+    return defaultLogs;
   });
 
   const [projects, setProjects] = useState<Project[]>(() => {

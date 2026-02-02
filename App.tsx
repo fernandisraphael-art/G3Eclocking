@@ -6,6 +6,7 @@ import Login from './components/Login';
 import TimeEntryForm from './components/TimeEntryForm';
 import LogList from './components/LogList';
 import Dashboard from './components/Dashboard';
+import Team from './components/Team';
 import { UserRole } from './types';
 
 const MainApp: React.FC = () => {
@@ -131,8 +132,6 @@ const MainApp: React.FC = () => {
           </div>
         );
       case 'history':
-        return <LogList logs={myLogs} onEdit={handleEdit} title="Minhas Horas" />;
-      case 'team':
         return (
           <div>
             <div style={{
@@ -147,40 +146,27 @@ const MainApp: React.FC = () => {
                 fontWeight: 'bold',
                 color: '#003057'
               }}>
-                Equipe GEEE
+                Minhas Horas
               </h1>
-              {(currentUser?.role === UserRole.COORDINATOR) && (
-                <button 
-                  onClick={handleNewProject}
-                  style={{
-                    backgroundColor: '#FFCD00',
-                    color: '#003057',
-                    padding: '12px 24px',
-                    borderRadius: '10px',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontSize: '13px',
-                    fontWeight: 'bold',
-                    letterSpacing: '0.5px',
-                    textTransform: 'uppercase',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#ffe052';
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = '#FFCD00';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                  }}
-                >
-                  + NOVO PROJETO
-                </button>
-              )}
+              <input
+                type="text"
+                placeholder="dd/mm/aaaa"
+                style={{
+                  padding: '10px 16px',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  color: '#a0b0c0',
+                  width: '140px',
+                  textAlign: 'right'
+                }}
+              />
             </div>
-            <LogList logs={logs} title="" />
+            <LogList logs={myLogs} onEdit={handleEdit} title="" />
           </div>
         );
+      case 'team':
+        return <Team />;
       case 'reports':
         return <Dashboard />;
       default:

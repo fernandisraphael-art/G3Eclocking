@@ -28,33 +28,102 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#003057] p-4 relative overflow-hidden">
-      {/* Decorative patterns */}
-      <div className="absolute inset-0 opacity-5 pointer-events-none">
-        <div className="absolute top-0 left-0 w-full h-full" style={{ backgroundImage: 'repeating-linear-gradient(45deg, #fff 0, #fff 1px, transparent 0, transparent 50%)', backgroundSize: '30px 30px' }}></div>
-      </div>
-      
-      <div className="w-full max-w-md relative z-10">
-        <div className="bg-white/10 backdrop-blur-xl p-8 rounded-[2rem] border border-white/10 shadow-2xl">
-          <div className="text-center mb-10">
-            <h1 className="text-3xl font-black text-white tracking-tighter uppercase">G3Eclocking</h1>
-            <div className="h-1 w-12 bg-[#FFCD00] mx-auto mt-2 rounded-full"></div>
-            <p className="text-blue-100/60 text-xs mt-4 font-bold uppercase tracking-widest">Portal de Apontamento de Horas</p>
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'linear-gradient(135deg, #003057 0%, #004d7a 100%)',
+      padding: '16px',
+      position: 'relative',
+      overflow: 'hidden'
+    }}>
+      <div style={{
+        width: '100%',
+        maxWidth: '400px',
+        position: 'relative',
+        zIndex: 10
+      }}>
+        <div style={{
+          background: 'rgba(255, 255, 255, 0.95)',
+          padding: '40px',
+          borderRadius: '24px',
+          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+          border: '1px solid rgba(255, 255, 255, 0.2)'
+        }}>
+          <div style={{
+            textAlign: 'center',
+            marginBottom: '40px'
+          }}>
+            <h1 style={{
+              fontSize: '32px',
+              fontWeight: 'black',
+              color: '#003057',
+              margin: '0 0 12px 0',
+              textTransform: 'uppercase',
+              letterSpacing: '1px'
+            }}>
+              G3Eclocking
+            </h1>
+            <div style={{
+              height: '4px',
+              width: '48px',
+              background: '#FFCD00',
+              margin: '12px auto',
+              borderRadius: '2px'
+            }} />
+            <p style={{
+              color: '#003057',
+              fontSize: '12px',
+              marginTop: '16px',
+              fontWeight: 'bold',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              opacity: 0.6
+            }}>
+              Portal de Apontamento de Horas
+            </p>
           </div>
 
           {error && (
-            <div className="mb-6 p-4 bg-red-500/20 border border-red-500/30 text-red-200 text-xs rounded-xl flex items-center gap-3 animate-shake">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 flex-shrink-0">
-                <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM8.28 7.22a.75.75 0 0 0-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 1 0 1.06 1.06L10 11.06l1.72 1.72a.75.75 0 1 0 1.06-1.06L11.06 10l1.72-1.72a.75.75 0 0 0-1.06-1.06L10 8.94 8.28 7.22Z" clipRule="evenodd" />
-              </svg>
+            <div style={{
+              marginBottom: '24px',
+              padding: '16px',
+              background: '#fee2e2',
+              border: '1px solid #fca5a5',
+              borderRadius: '12px',
+              color: '#dc2626',
+              fontSize: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              animation: 'shake 0.3s ease-in-out'
+            }}>
+              <span style={{ fontSize: '20px' }}>⚠️</span>
               {error}
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-6">
+          <form onSubmit={handleLogin} style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '24px'
+          }}>
             <div>
-              <label className="block text-xs font-bold text-blue-100/80 uppercase tracking-widest mb-2 ml-1">Identificação do Colaborador</label>
-              <div className="relative">
+              <label style={{
+                display: 'block',
+                fontSize: '11px',
+                fontWeight: 'bold',
+                color: '#003057',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                marginBottom: '8px',
+                marginLeft: '4px',
+                opacity: 0.7
+              }}>
+                Identificação do Colaborador
+              </label>
+              <div style={{ position: 'relative' }}>
                 <input
                   type="text"
                   required
@@ -62,30 +131,107 @@ const Login: React.FC = () => {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Nome Completo"
-                  className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-[#FFCD00] focus:border-transparent outline-none transition-all text-white placeholder:text-white/20 font-medium"
+                  style={{
+                    width: '100%',
+                    padding: '16px 16px 16px 40px',
+                    background: 'rgba(0, 48, 87, 0.05)',
+                    border: '2px solid #e5e7eb',
+                    borderRadius: '12px',
+                    fontSize: '14px',
+                    color: '#003057',
+                    fontWeight: '500',
+                    outline: 'none',
+                    transition: 'all 0.2s ease',
+                    boxSizing: 'border-box'
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = '#FFCD00';
+                    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 205, 0, 0.1)';
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = '#e5e7eb';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
                 />
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-white/30 absolute left-4 top-4.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-                </svg>
+                <span style={{
+                  position: 'absolute',
+                  left: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  fontSize: '18px'
+                }}>
+                  👤
+                </span>
               </div>
             </div>
 
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-[#FFCD00] text-[#003057] py-4 rounded-2xl font-black text-lg shadow-xl shadow-black/20 hover:bg-[#ffe052] active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              style={{
+                width: '100%',
+                background: isLoading ? '#FFCD00' : '#003057',
+                color: isLoading ? '#003057' : 'white',
+                padding: '16px',
+                borderRadius: '12px',
+                fontWeight: 'bold',
+                fontSize: '14px',
+                border: 'none',
+                cursor: isLoading ? 'not-allowed' : 'pointer',
+                boxShadow: '0 4px 12px rgba(0, 48, 87, 0.2)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                transition: 'all 0.2s ease',
+                opacity: isLoading ? 0.8 : 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
+              }}
+              onMouseEnter={(e) => {
+                if (!isLoading) {
+                  e.currentTarget.style.background = '#FFCD00';
+                  e.currentTarget.style.color = '#003057';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isLoading) {
+                  e.currentTarget.style.background = '#003057';
+                  e.currentTarget.style.color = 'white';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }
+              }}
             >
               {isLoading ? (
-                <svg className="animate-spin h-5 w-5 text-[#003057]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-              ) : 'ENTRAR NO SISTEMA'}
+                <>
+                  <span style={{
+                    display: 'inline-block',
+                    width: '16px',
+                    height: '16px',
+                    border: '3px solid rgba(0, 48, 87, 0.3)',
+                    borderTop: '3px solid #003057',
+                    borderRadius: '50%',
+                    animation: 'spin 0.6s linear infinite'
+                  }} />
+                  Entrando...
+                </>
+              ) : (
+                'Entrar no Sistema'
+              )}
             </button>
           </form>
         </div>
 
-        <p className="mt-8 text-center text-blue-100/40 text-[10px] font-bold tracking-widest uppercase">
+        <p style={{
+          marginTop: '32px',
+          textAlign: 'center',
+          color: 'rgba(255, 255, 255, 0.4)',
+          fontSize: '10px',
+          fontWeight: 'bold',
+          textTransform: 'uppercase',
+          letterSpacing: '0.5px'
+        }}>
           © {new Date().getFullYear()} MRS Logística S.A. - Engenharia Eletroeletrônica
         </p>
       </div>
@@ -96,7 +242,9 @@ const Login: React.FC = () => {
           25% { transform: translateX(-4px); }
           75% { transform: translateX(4px); }
         }
-        .animate-shake { animation: shake 0.2s ease-in-out 0s 2; }
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
       `}</style>
     </div>
   );

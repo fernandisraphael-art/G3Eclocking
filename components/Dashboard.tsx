@@ -1,7 +1,5 @@
-
 import React, { useState } from 'react';
 import { useApp } from '../store';
-import { DemandType } from '../types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 
 const Dashboard: React.FC = () => {
@@ -10,9 +8,9 @@ const Dashboard: React.FC = () => {
 
   const totalHours = logs.reduce((acc, l) => acc + l.hours, 0);
 
-  // Data for Project Chart
+  // Project Chart Data
   const projectDataMap = logs.reduce((acc: any, log) => {
-    acc[log.projectName] = (acc[log.projectName] || 0) + log.hours;
+    acc[log.projectId] = (acc[log.projectId] || 0) + log.hours;
     return acc;
   }, {});
   const projectChartData = Object.entries(projectDataMap)
@@ -20,19 +18,12 @@ const Dashboard: React.FC = () => {
     .sort((a, b) => b.hours - a.hours)
     .slice(0, 10);
 
-  // Data for Demand Chart
+  // Demand Chart Data
   const demandDataMap = logs.reduce((acc: any, log) => {
-    acc[log.demandType] = (acc[log.demandType] || 0) + log.hours;
+    acc[log.activityType] = (acc[log.activityType] || 0) + log.hours;
     return acc;
   }, {});
   const demandChartData = Object.entries(demandDataMap).map(([name, value]) => ({ name, value: value as number }));
-
-  // Routine vs Project Ratio
-  const routineHours = logs.filter(l => l.demandType === DemandType.ROTINA || l.demandType === DemandType.SUPORTE).reduce((acc, l) => acc + l.hours, 0);
-  const projectActiveHours = logs.filter(l => l.demandType === DemandType.PROJETO || l.demandType === DemandType.FEL01).reduce((acc, l) => acc + l.hours, 0);
-  const totalRelevant = routineHours + projectActiveHours || 1;
-  const routinePercent = (routineHours / totalRelevant) * 100;
-  const projectPercent = (projectActiveHours / totalRelevant) * 100;
 
   // Collaborator Summary
   const collabDataMap = logs.reduce((acc: any, log) => {
@@ -43,20 +34,18 @@ const Dashboard: React.FC = () => {
     .map(([name, hours]) => ({ name, hours: hours as number }))
     .sort((a, b) => b.hours - a.hours);
 
-  // Filtered Logs for Consolidation Table
-  const filteredLogs = logs.filter(l => 
+  const filteredLogs = logs.filter(l =>
     l.collaboratorName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    l.projectName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    l.projectId.toLowerCase().includes(searchTerm.toLowerCase()) ||
     l.activityType.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Corporate Colors
   const COLORS = ['#003057', '#FFCD00', '#0058a3', '#ffd940', '#001b31', '#d9af00'];
 
   const exportCSV = () => {
-    const headers = ['Colaborador,Data,Demanda,Projeto,Fase,Atividade,Horas,Observação\n'];
-    const rows = logs.map(l => `${l.collaboratorName},${l.date},${l.demandType},${l.projectName},${l.phase},${l.activityType},${l.hours},${l.observation?.replace(/,/g, ';') || ''}\n`);
-    const blob = new Blob([...headers, ...rows], { type: 'text/csv;charset=utf-8;' });
+    const headers = 'Colaborador,Data,Projeto,Fase,Atividade,Horas,Descrição\n';
+    const rows = logs.map(l => `${l.collaboratorName},${l.date},${l.projectId},${l.phase},${l.activityType},${l.hours},"${l.description}"`).join('\n');
+    const blob = new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = `consolidado_geee_${new Date().toISOString().split('T')[0]}.csv`;
@@ -64,241 +53,779 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8 pb-10">
-      {/* Header Administrativo */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
-        <div className="flex items-center gap-5">
-          <div className="w-16 h-16 bg-[#003057] rounded-3xl flex items-center justify-center text-[#FFCD00] shadow-lg shadow-blue-900/10">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-8 h-8">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" />
-            </svg>
+    <div style={{ paddingBottom: '40px' }}>
+      {/* Header */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        gap: '24px',
+        background: 'white',
+        padding: '32px',
+        borderRadius: '20px',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+        border: '1px solid #e5e7eb',
+        marginBottom: '32px'
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '20px'
+        }}>
+          <div style={{
+            width: '64px',
+            height: '64px',
+            background: '#003057',
+            borderRadius: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#FFCD00',
+            boxShadow: '0 4px 12px rgba(0, 48, 87, 0.2)',
+            fontSize: '32px'
+          }}>
+            📊
           </div>
           <div>
-            <h2 className="text-4xl font-black text-[#003057] tracking-tighter">Administrativo</h2>
-            <p className="text-slate-400 font-bold text-xs uppercase tracking-[0.2em] mt-1">Consolidação e Gestão GEEE</p>
+            <h2 style={{
+              fontSize: '32px',
+              fontWeight: 'black',
+              color: '#003057',
+              margin: '0 0 4px 0',
+              letterSpacing: '-0.5px'
+            }}>
+              Administrativo
+            </h2>
+            <p style={{
+              fontSize: '12px',
+              color: '#a0b0c0',
+              fontWeight: 'bold',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              margin: '0'
+            }}>
+              Consolidação e Gestão GEEE
+            </p>
           </div>
         </div>
-        
-        <div className="flex flex-wrap gap-4 w-full lg:w-auto">
-          <button 
-            onClick={exportCSV}
-            className="flex-1 lg:flex-none bg-[#FFCD00] text-[#003057] px-10 py-4 rounded-2xl hover:bg-[#ffe052] transition-all shadow-xl shadow-[#FFCD00]/10 font-black uppercase tracking-widest text-xs border-b-4 border-black/10 flex items-center justify-center gap-3 active:scale-95"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-5 h-5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
-            </svg>
-            Baixar Lançamentos (CSV)
-          </button>
-        </div>
+
+        <button
+          onClick={exportCSV}
+          style={{
+            background: '#FFCD00',
+            color: '#003057',
+            padding: '12px 24px',
+            borderRadius: '12px',
+            border: 'none',
+            cursor: 'pointer',
+            fontWeight: 'bold',
+            fontSize: '12px',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
+            boxShadow: '0 4px 12px rgba(255, 205, 0, 0.2)',
+            transition: 'all 0.2s ease',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            whiteSpace: 'nowrap'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = '#ffe052';
+            e.currentTarget.style.transform = 'translateY(-2px)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = '#FFCD00';
+            e.currentTarget.style.transform = 'translateY(0)';
+          }}
+        >
+          ⬇️ BAIXAR LANÇAMENTOS (CSV)
+        </button>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-[#003057] p-8 rounded-[2.5rem] shadow-xl border border-white/5 relative overflow-hidden group">
-          <div className="absolute -right-6 -top-6 w-24 h-24 bg-white/5 rounded-full group-hover:scale-125 transition-transform"></div>
-          <div className="text-blue-200/50 text-[10px] font-black uppercase tracking-widest mb-3">Total de Horas Consolidadas</div>
-          <div className="text-5xl font-black text-[#FFCD00] tabular-nums">{totalHours.toFixed(1)}</div>
-          <div className="mt-4 flex items-center gap-2">
-            <span className="text-[10px] text-white/40 font-bold uppercase tracking-tighter italic">Base de dados completa</span>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+        gap: '24px',
+        marginBottom: '32px'
+      }}>
+        <div style={{
+          background: '#003057',
+          padding: '32px',
+          borderRadius: '20px',
+          boxShadow: '0 4px 12px rgba(0, 48, 87, 0.1)',
+          border: '1px solid rgba(255, 255, 255, 0.05)'
+        }}>
+          <p style={{
+            fontSize: '10px',
+            fontWeight: 'bold',
+            color: 'rgba(255, 255, 255, 0.5)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
+            margin: '0 0 12px 0'
+          }}>
+            Total de Horas Consolidadas
+          </p>
+          <p style={{
+            fontSize: '48px',
+            fontWeight: 'black',
+            color: '#FFCD00',
+            margin: '0 0 12px 0'
+          }}>
+            {totalHours.toFixed(1)}
+          </p>
+          <p style={{
+            fontSize: '9px',
+            fontWeight: 'bold',
+            color: 'rgba(255, 255, 255, 0.4)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
+            margin: '0'
+          }}>
+            Base de dados completa
+          </p>
+        </div>
+
+        <div style={{
+          background: 'white',
+          padding: '32px',
+          borderRadius: '20px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+          border: '1px solid #e5e7eb'
+        }}>
+          <p style={{
+            fontSize: '10px',
+            fontWeight: 'bold',
+            color: '#a0b0c0',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
+            margin: '0 0 12px 0'
+          }}>
+            Projetos Monitorados
+          </p>
+          <p style={{
+            fontSize: '48px',
+            fontWeight: 'black',
+            color: '#003057',
+            margin: '0'
+          }}>
+            {projects.filter(p => p.status === 'ativo').length}
+          </p>
+          <div style={{
+            marginTop: '16px',
+            paddingTop: '16px',
+            borderTop: '1px solid #e5e7eb',
+            display: 'flex',
+            justifyContent: 'space-between',
+            fontSize: '10px',
+            fontWeight: 'bold',
+            color: '#a0b0c0',
+            textTransform: 'uppercase'
+          }}>
+            <span>Em Execução</span>
+            <span style={{ color: '#003057' }}>{projects.length} Total</span>
           </div>
         </div>
 
-        <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 flex flex-col justify-between">
-          <div>
-            <div className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-3">Projetos Monitorados</div>
-            <div className="text-5xl font-black text-[#003057] tabular-nums">{projects.filter(p => p.status === 'ativo').length}</div>
-          </div>
-          <div className="mt-6 pt-4 border-t border-slate-50 flex items-center justify-between text-[10px] font-black text-slate-400 uppercase">
-             <span>Em Execução</span>
-             <span className="text-[#003057]">{projects.length} Total</span>
+        <div style={{
+          background: 'white',
+          padding: '32px',
+          borderRadius: '20px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+          border: '1px solid #e5e7eb'
+        }}>
+          <p style={{
+            fontSize: '10px',
+            fontWeight: 'bold',
+            color: '#a0b0c0',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
+            margin: '0 0 12px 0'
+          }}>
+            Equipe Ativa
+          </p>
+          <p style={{
+            fontSize: '48px',
+            fontWeight: 'black',
+            color: '#003057',
+            margin: '0'
+          }}>
+            {collabSummary.length}
+          </p>
+          <div style={{
+            marginTop: '16px',
+            paddingTop: '16px',
+            borderTop: '1px solid #e5e7eb',
+            display: 'flex',
+            justifyContent: 'space-between',
+            fontSize: '10px',
+            fontWeight: 'bold',
+            color: '#a0b0c0',
+            textTransform: 'uppercase'
+          }}>
+            <span>Com Lançamentos</span>
+            <span style={{ color: '#003057' }}>{users.length} Colaboradores</span>
           </div>
         </div>
 
-        <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 flex flex-col justify-between">
-          <div>
-            <div className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-3">Equipe Ativa</div>
-            <div className="text-5xl font-black text-[#003057] tabular-nums">{new Set(logs.map(l => l.collaboratorId)).size}</div>
+        <div style={{
+          background: 'white',
+          padding: '32px',
+          borderRadius: '20px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+          border: '1px solid #e5e7eb'
+        }}>
+          <p style={{
+            fontSize: '10px',
+            fontWeight: 'bold',
+            color: '#a0b0c0',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
+            margin: '0 0 16px 0'
+          }}>
+            Eficiência Projeto vs Rotina
+          </p>
+          <div style={{
+            width: '100%',
+            height: '12px',
+            background: '#e5e7eb',
+            borderRadius: '8px',
+            overflow: 'hidden'
+          }}>
+            <div style={{
+              width: '100%',
+              height: '100%',
+              background: '#003057',
+              borderRadius: '8px'
+            }} />
           </div>
-          <div className="mt-6 pt-4 border-t border-slate-50 flex items-center justify-between text-[10px] font-black text-slate-400 uppercase">
-             <span>Com Lançamentos</span>
-             <span className="text-[#003057]">{users.length} Colaboradores</span>
+          <div style={{
+            marginTop: '16px',
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '8px'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '9px',
+              fontWeight: 'bold',
+              color: '#003057',
+              textTransform: 'uppercase'
+            }}>
+              <div style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '2px',
+                background: '#003057'
+              }} />
+              Engenharia
+            </div>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '9px',
+              fontWeight: 'bold',
+              color: '#a0b0c0',
+              textTransform: 'uppercase'
+            }}>
+              <div style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '2px',
+                background: '#FFCD00'
+              }} />
+              Apoio/Geral
+            </div>
           </div>
-        </div>
-
-        <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
-           <div className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-4">Eficiência Projeto vs Rotina</div>
-           <div className="flex h-12 w-full rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 p-1">
-              <div 
-                style={{ width: `${projectPercent}%` }} 
-                className="bg-[#003057] h-full flex items-center justify-center text-[9px] font-black text-white transition-all duration-1000 rounded-xl"
-              >
-                {projectPercent.toFixed(0)}%
-              </div>
-              <div 
-                style={{ width: `${routinePercent}%` }} 
-                className="bg-[#FFCD00] h-full flex items-center justify-center text-[9px] font-black text-[#003057] transition-all duration-1000 rounded-xl ml-1"
-              >
-                {routinePercent.toFixed(0)}%
-              </div>
-           </div>
-           <div className="mt-4 grid grid-cols-2 gap-2 text-[9px] font-black uppercase tracking-widest">
-              <div className="flex items-center gap-1.5 text-[#003057]"><div className="w-2 h-2 rounded-full bg-[#003057]"></div> Engenharia</div>
-              <div className="flex items-center gap-1.5 text-slate-400"><div className="w-2 h-2 rounded-full bg-[#FFCD00]"></div> Apoio/Geral</div>
-           </div>
         </div>
       </div>
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100">
-          <div className="flex items-center justify-between mb-10 border-b border-slate-50 pb-6">
-            <h3 className="text-xl font-black text-[#003057] uppercase tracking-tighter">Horas por Projeto (Top 10)</h3>
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Acumulado</span>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))',
+        gap: '24px',
+        marginBottom: '32px'
+      }}>
+        <div style={{
+          background: 'white',
+          padding: '32px',
+          borderRadius: '20px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+          border: '1px solid #e5e7eb'
+        }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '24px',
+            paddingBottom: '20px',
+            borderBottom: '1px solid #e5e7eb'
+          }}>
+            <h3 style={{
+              fontSize: '14px',
+              fontWeight: 'black',
+              color: '#003057',
+              margin: '0',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px'
+            }}>
+              Horas por Projeto (Top 10)
+            </h3>
+            <span style={{
+              fontSize: '10px',
+              fontWeight: 'bold',
+              color: '#a0b0c0',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px'
+            }}>
+              Acumulado
+            </span>
           </div>
-          <div className="h-80">
+          <div style={{ height: '300px' }}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={projectChartData} layout="vertical" margin={{ left: 20 }}>
+              <BarChart data={projectChartData} layout="vertical" margin={{ left: 120 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" />
                 <XAxis type="number" hide />
-                <YAxis dataKey="name" type="category" tick={{fontSize: 9, fill: '#64748b', fontWeight: 'bold'}} width={120} />
-                <Tooltip 
-                  cursor={{fill: '#f8fafc'}}
-                  contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', padding: '12px' }}
-                />
-                <Bar dataKey="hours" fill="#003057" radius={[0, 10, 10, 0]} />
+                <YAxis dataKey="name" type="category" tick={{ fontSize: 10, fill: '#64748b', fontWeight: 'bold' }} />
+                <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                <Bar dataKey="hours" fill="#003057" radius={[0, 8, 8, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100">
-          <div className="flex items-center justify-between mb-10 border-b border-slate-50 pb-6">
-            <h3 className="text-xl font-black text-[#003057] uppercase tracking-tighter">Mix de Categoria</h3>
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Distribuição %</span>
+        <div style={{
+          background: 'white',
+          padding: '32px',
+          borderRadius: '20px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+          border: '1px solid #e5e7eb'
+        }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '24px',
+            paddingBottom: '20px',
+            borderBottom: '1px solid #e5e7eb'
+          }}>
+            <h3 style={{
+              fontSize: '14px',
+              fontWeight: 'black',
+              color: '#003057',
+              margin: '0',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px'
+            }}>
+              Mix de Categoria
+            </h3>
+            <span style={{
+              fontSize: '10px',
+              fontWeight: 'bold',
+              color: '#a0b0c0',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px'
+            }}>
+              Distribuição %
+            </span>
           </div>
-          <div className="h-80">
+          <div style={{ height: '300px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie 
-                  data={demandChartData} 
-                  dataKey="value" 
-                  nameKey="name" 
-                  cx="50%" 
-                  cy="50%" 
-                  outerRadius={120} 
-                  innerRadius={80}
-                  paddingAngle={8}
+                <Pie
+                  data={demandChartData}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={100}
+                  innerRadius={60}
+                  paddingAngle={4}
                 >
-                  {demandChartData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+                  {demandChartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
                 </Pie>
-                <Tooltip contentStyle={{ borderRadius: '20px' }} />
-                <Legend verticalAlign="bottom" height={40} iconType="circle" wrapperStyle={{ fontSize: '10px', fontWeight: '900', textTransform: 'uppercase', paddingTop: '20px' }}/>
+                <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
               </PieChart>
             </ResponsiveContainer>
           </div>
         </div>
       </div>
 
-      {/* Ranking and Consolidated Table */}
-      <div className="grid grid-cols-1 gap-8">
-        <div className="bg-white rounded-[3rem] shadow-sm border border-slate-100 overflow-hidden">
-          <div className="p-8 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between">
-             <h3 className="text-lg font-black text-[#003057] uppercase tracking-tighter">Ranking de Produtividade</h3>
-             <div className="px-4 py-2 bg-white rounded-xl text-[10px] font-black text-slate-400 uppercase tracking-widest shadow-sm">
-                Total: {users.length} Colaboradores
-             </div>
-          </div>
-          <div className="p-4 overflow-x-auto">
-             <table className="w-full text-left">
-                <thead className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">
-                   <tr>
-                      <th className="px-6 py-4">Colaborador</th>
-                      <th className="px-6 py-4 text-right">Horas Totais</th>
-                      <th className="px-6 py-4 text-right">Diferencial/Período</th>
-                   </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                   {collabSummary.map((collab, idx) => (
-                     <tr key={idx} className="hover:bg-slate-50/50 transition-colors group">
-                        <td className="px-6 py-4 text-sm font-black text-[#003057]">
-                           <span className="mr-3 text-slate-300 font-mono text-xs group-hover:text-[#FFCD00] transition-colors">{String(idx + 1).padStart(2, '0')}</span>
-                           {collab.name}
-                        </td>
-                        <td className="px-6 py-4 text-right text-sm font-black text-[#003057]">{collab.hours.toFixed(2)}h</td>
-                        <td className="px-6 py-4 text-right">
-                           <div className="inline-flex px-3 py-1 rounded-lg bg-green-50 text-green-600 text-[10px] font-black">
-                              {(collab.hours / Math.max(1, new Set(logs.filter(l => l.collaboratorName === collab.name).map(l => l.date)).size)).toFixed(1)}h avg/dia
-                           </div>
-                        </td>
-                     </tr>
-                   ))}
-                </tbody>
-             </table>
+      {/* Ranking and Table */}
+      <div style={{
+        background: 'white',
+        padding: '32px',
+        borderRadius: '20px',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+        border: '1px solid #e5e7eb',
+        marginBottom: '32px',
+        overflow: 'hidden'
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '24px',
+          paddingBottom: '20px',
+          borderBottom: '1px solid #e5e7eb'
+        }}>
+          <h3 style={{
+            fontSize: '14px',
+            fontWeight: 'black',
+            color: '#003057',
+            margin: '0',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px'
+          }}>
+            Ranking de Produtividade
+          </h3>
+          <div style={{
+            padding: '8px 16px',
+            background: '#f8fafc',
+            borderRadius: '8px',
+            fontSize: '10px',
+            fontWeight: 'bold',
+            color: '#a0b0c0',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px'
+          }}>
+            Total: {users.length} Colaboradores
           </div>
         </div>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{
+            width: '100%',
+            borderCollapse: 'collapse',
+            fontSize: '13px'
+          }}>
+            <thead>
+              <tr style={{
+                background: '#f8fafc',
+                borderBottom: '1px solid #e5e7eb'
+              }}>
+                <th style={{
+                  padding: '12px 16px',
+                  textAlign: 'left',
+                  fontWeight: 'bold',
+                  color: '#a0b0c0',
+                  fontSize: '10px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
+                }}>
+                  Colaborador
+                </th>
+                <th style={{
+                  padding: '12px 16px',
+                  textAlign: 'right',
+                  fontWeight: 'bold',
+                  color: '#a0b0c0',
+                  fontSize: '10px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
+                }}>
+                  Horas Totais
+                </th>
+                <th style={{
+                  padding: '12px 16px',
+                  textAlign: 'right',
+                  fontWeight: 'bold',
+                  color: '#a0b0c0',
+                  fontSize: '10px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
+                }}>
+                  Diferencial/Período
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {collabSummary.map((collab, idx) => {
+                const daysWorked = new Set(logs.filter(l => l.collaboratorName === collab.name).map(l => l.date)).size;
+                const avgPerDay = (collab.hours / Math.max(1, daysWorked)).toFixed(1);
+                return (
+                  <tr key={idx} style={{
+                    borderBottom: '1px solid #e5e7eb',
+                    background: idx % 2 === 0 ? 'white' : '#f8fafc',
+                    transition: 'background 0.2s ease'
+                  }}>
+                    <td style={{
+                      padding: '12px 16px',
+                      color: '#003057',
+                      fontWeight: '600'
+                    }}>
+                      <span style={{
+                        marginRight: '12px',
+                        color: '#a0b0c0',
+                        fontFamily: 'monospace',
+                        fontSize: '11px'
+                      }}>
+                        {String(idx + 1).padStart(2, '0')}
+                      </span>
+                      {collab.name}
+                    </td>
+                    <td style={{
+                      padding: '12px 16px',
+                      textAlign: 'right',
+                      color: '#003057',
+                      fontWeight: '600'
+                    }}>
+                      {collab.hours.toFixed(2)}h
+                    </td>
+                    <td style={{
+                      padding: '12px 16px',
+                      textAlign: 'right'
+                    }}>
+                      <span style={{
+                        padding: '4px 8px',
+                        background: '#f0fdf4',
+                        color: '#16a34a',
+                        borderRadius: '6px',
+                        fontSize: '10px',
+                        fontWeight: 'bold'
+                      }}>
+                        {avgPerDay}h avg/dia
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-        {/* FULL CONSOLIDATION TABLE */}
-        <div className="bg-white rounded-[3rem] shadow-sm border border-slate-100 overflow-hidden">
-          <div className="p-8 bg-[#003057] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-             <div>
-                <h3 className="text-lg font-black text-white uppercase tracking-tighter">Histórico Geral Consolidado</h3>
-                <p className="text-blue-300/60 text-[10px] font-black uppercase tracking-widest">Base Auditável completa</p>
-             </div>
-             <div className="relative w-full sm:w-72">
-                <input 
-                  type="text" 
-                  placeholder="Filtrar por nome, projeto..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white text-xs outline-none focus:ring-2 focus:ring-[#FFCD00] placeholder:text-white/20"
-                />
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4 text-white/30 absolute left-3.5 top-3">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-                </svg>
-             </div>
+      {/* Consolidation Table */}
+      <div style={{
+        background: '#003057',
+        padding: '32px',
+        borderRadius: '20px',
+        boxShadow: '0 4px 12px rgba(0, 48, 87, 0.1)',
+        border: '1px solid rgba(255, 255, 255, 0.05)',
+        overflow: 'hidden'
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '24px'
+        }}>
+          <div>
+            <h3 style={{
+              fontSize: '14px',
+              fontWeight: 'black',
+              color: 'white',
+              margin: '0 0 4px 0',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px'
+            }}>
+              Histórico Geral Consolidado
+            </h3>
+            <p style={{
+              fontSize: '10px',
+              fontWeight: 'bold',
+              color: 'rgba(255, 255, 255, 0.5)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              margin: '0'
+            }}>
+              Base Auditável completa
+            </p>
           </div>
-          <div className="overflow-x-auto">
-             <table className="w-full text-left">
-                <thead className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] border-b border-slate-50 bg-slate-50/30">
-                   <tr>
-                      <th className="px-6 py-4">Data</th>
-                      <th className="px-6 py-4">Colaborador</th>
-                      <th className="px-6 py-4">Projeto / Atividade</th>
-                      <th className="px-6 py-4 text-center">Tipo</th>
-                      <th className="px-6 py-4 text-right">Horas</th>
-                   </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                   {filteredLogs.slice(0, 100).map((log, idx) => (
-                     <tr key={log.id} className="hover:bg-slate-50/80 transition-all border-l-4 border-transparent hover:border-[#FFCD00]">
-                        <td className="px-6 py-4 whitespace-nowrap text-[11px] font-black text-slate-400">{new Date(log.date + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
-                        <td className="px-6 py-4">
-                           <div className="text-xs font-black text-[#003057]">{log.collaboratorName}</div>
-                        </td>
-                        <td className="px-6 py-4">
-                           <div className="text-xs font-bold text-[#003057] truncate max-w-[200px]">{log.projectName}</div>
-                           <div className="text-[10px] text-slate-400 italic truncate max-w-[200px]">{log.activityType}</div>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                           <span className="px-2 py-0.5 rounded-md bg-slate-100 text-[8px] font-black text-slate-500 uppercase">{log.demandType}</span>
-                        </td>
-                        <td className="px-6 py-4 text-right text-xs font-black text-[#003057]">{log.hours.toFixed(2)}</td>
-                     </tr>
-                   ))}
-                   {filteredLogs.length === 0 && (
-                     <tr>
-                        <td colSpan={5} className="p-20 text-center text-slate-300 font-black uppercase tracking-widest text-xs">Nenhum registro encontrado nos filtros</td>
-                     </tr>
-                   )}
-                </tbody>
-             </table>
-             {filteredLogs.length > 100 && (
-               <div className="p-6 bg-slate-50 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                  Exibindo os primeiros 100 registros. Use o Excel para análise completa.
-               </div>
-             )}
-          </div>
+          <input
+            type="text"
+            placeholder="Filtrar por nome, projeto..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{
+              padding: '10px 16px',
+              background: 'rgba(255, 255, 255, 0.1)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              borderRadius: '8px',
+              color: 'white',
+              fontSize: '13px',
+              outline: 'none',
+              width: '280px',
+              transition: 'all 0.2s ease'
+            }}
+            onFocus={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+              e.currentTarget.style.borderColor = '#FFCD00';
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+            }}
+          />
         </div>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{
+            width: '100%',
+            borderCollapse: 'collapse',
+            fontSize: '13px'
+          }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                <th style={{
+                  padding: '12px 16px',
+                  textAlign: 'left',
+                  fontWeight: 'bold',
+                  color: 'rgba(255, 255, 255, 0.6)',
+                  fontSize: '10px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
+                }}>
+                  Data
+                </th>
+                <th style={{
+                  padding: '12px 16px',
+                  textAlign: 'left',
+                  fontWeight: 'bold',
+                  color: 'rgba(255, 255, 255, 0.6)',
+                  fontSize: '10px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
+                }}>
+                  Colaborador
+                </th>
+                <th style={{
+                  padding: '12px 16px',
+                  textAlign: 'left',
+                  fontWeight: 'bold',
+                  color: 'rgba(255, 255, 255, 0.6)',
+                  fontSize: '10px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
+                }}>
+                  Projeto / Atividade
+                </th>
+                <th style={{
+                  padding: '12px 16px',
+                  textAlign: 'center',
+                  fontWeight: 'bold',
+                  color: 'rgba(255, 255, 255, 0.6)',
+                  fontSize: '10px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
+                }}>
+                  Tipo
+                </th>
+                <th style={{
+                  padding: '12px 16px',
+                  textAlign: 'right',
+                  fontWeight: 'bold',
+                  color: 'rgba(255, 255, 255, 0.6)',
+                  fontSize: '10px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
+                }}>
+                  Horas
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredLogs.slice(0, 100).map((log, idx) => (
+                <tr
+                  key={idx}
+                  style={{
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                    background: idx % 2 === 0 ? 'rgba(255, 255, 255, 0.02)' : 'transparent',
+                    borderLeft: '4px solid transparent',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderLeftColor = '#FFCD00';
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderLeftColor = 'transparent';
+                    e.currentTarget.style.background = idx % 2 === 0 ? 'rgba(255, 255, 255, 0.02)' : 'transparent';
+                  }}
+                >
+                  <td style={{
+                    padding: '12px 16px',
+                    color: 'rgba(255, 255, 255, 0.6)',
+                    fontSize: '11px',
+                    fontWeight: 'bold'
+                  }}>
+                    {new Date(log.date).toLocaleDateString('pt-BR')}
+                  </td>
+                  <td style={{
+                    padding: '12px 16px',
+                    color: 'white',
+                    fontSize: '12px',
+                    fontWeight: 'bold'
+                  }}>
+                    {log.collaboratorName}
+                  </td>
+                  <td style={{
+                    padding: '12px 16px',
+                    color: 'white'
+                  }}>
+                    <div style={{
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      marginBottom: '2px'
+                    }}>
+                      {log.projectId}
+                    </div>
+                    <div style={{
+                      fontSize: '11px',
+                      color: 'rgba(255, 255, 255, 0.5)',
+                      fontStyle: 'italic'
+                    }}>
+                      {log.activityType}
+                    </div>
+                  </td>
+                  <td style={{
+                    padding: '12px 16px',
+                    textAlign: 'center'
+                  }}>
+                    <span style={{
+                      padding: '4px 8px',
+                      background: 'rgba(255, 255, 255, 0.1)',
+                      borderRadius: '6px',
+                      fontSize: '9px',
+                      fontWeight: 'bold',
+                      color: 'rgba(255, 255, 255, 0.7)',
+                      textTransform: 'uppercase'
+                    }}>
+                      Projeto
+                    </span>
+                  </td>
+                  <td style={{
+                    padding: '12px 16px',
+                    textAlign: 'right',
+                    color: '#FFCD00',
+                    fontWeight: 'bold'
+                  }}>
+                    {log.hours.toFixed(2)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {filteredLogs.length > 100 && (
+          <div style={{
+            padding: '16px',
+            textAlign: 'center',
+            fontSize: '10px',
+            fontWeight: 'bold',
+            color: 'rgba(255, 255, 255, 0.5)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
+            borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+            marginTop: '16px'
+          }}>
+            Exibindo os primeiros 100 registros. Use o Excel para análise completa.
+          </div>
+        )}
       </div>
     </div>
   );
