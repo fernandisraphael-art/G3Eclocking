@@ -5,6 +5,7 @@ import { INITIAL_USERS, INITIAL_PROJECTS, ACTIVITIES_SEED } from './constants';
 
 interface AppContextType extends AppState {
   setCurrentUser: (user: User | null) => void;
+  login: (user: User) => void;
   addLog: (log: Omit<TimeLog, 'id' | 'createdAt' | 'updatedAt' | 'collaboratorId' | 'collaboratorName'>) => string | null;
   updateLog: (id: string, updates: Partial<TimeLog>) => void;
   deleteLog: (id: string) => void;
@@ -96,7 +97,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   return (
     <AppContext.Provider value={{
       currentUser, users: INITIAL_USERS, projects, activities: ACTIVITIES_SEED, logs,
-      setCurrentUser, addLog, updateLog, deleteLog, addProject
+      setCurrentUser, login: setCurrentUser, addLog, updateLog, deleteLog, addProject
     }}>
       {children}
     </AppContext.Provider>

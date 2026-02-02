@@ -53,23 +53,78 @@ const MainApp: React.FC = () => {
       );
     }
 
+    const getDayName = () => {
+      const days = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+      const today = new Date();
+      const dayName = days[today.getDay()];
+      const dayNum = today.getDate().toString().padStart(2, '0');
+      const months = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+      const monthName = months[today.getMonth()];
+      return `${dayName.toUpperCase()}, ${dayNum} DE ${monthName.toUpperCase()}`;
+    };
+
     switch (activeTab) {
       case 'my-day':
         return (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+          <div>
+            {/* Header */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
+              marginBottom: '32px'
+            }}>
               <div>
-                <h2 className="text-3xl font-black text-[#003057] tracking-tight">Meu Dia</h2>
-                <p className="text-slate-400 font-bold text-sm uppercase tracking-widest">{new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+                <h1 style={{
+                  margin: '0 0 8px 0',
+                  fontSize: '32px',
+                  fontWeight: 'bold',
+                  color: '#003057'
+                }}>
+                  Meu Dia
+                </h1>
+                <p style={{
+                  margin: 0,
+                  fontSize: '12px',
+                  color: '#a0b0c0',
+                  fontWeight: '600',
+                  letterSpacing: '0.5px',
+                  textTransform: 'uppercase'
+                }}>
+                  {getDayName()}
+                </p>
               </div>
               <button 
                 onClick={() => setShowForm(true)}
-                className="bg-[#003057] text-white px-6 py-4 rounded-2xl hover:bg-[#002544] transition-all shadow-xl shadow-blue-900/10 flex items-center gap-2 font-black active:scale-95 border-b-4 border-black/20"
+                style={{
+                  backgroundColor: '#003057',
+                  color: 'white',
+                  padding: '12px 24px',
+                  borderRadius: '10px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                  fontWeight: 'bold',
+                  letterSpacing: '0.5px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  transition: 'all 0.2s ease',
+                  textTransform: 'uppercase'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#002544';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#003057';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-5 h-5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                </svg>
-                <span className="hidden sm:inline">LANÇAR HORAS</span>
+                <span style={{ fontSize: '18px' }}>+</span>
+                LANÇAR HORAS
               </button>
             </div>
             <LogList logs={logsToday} onEdit={handleEdit} title="Apontamentos de Hoje" showFilters={false} />
@@ -79,13 +134,45 @@ const MainApp: React.FC = () => {
         return <LogList logs={myLogs} onEdit={handleEdit} title="Minhas Horas" />;
       case 'team':
         return (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-              <h2 className="text-3xl font-black text-[#003057] tracking-tight">Equipe GEEE</h2>
+          <div>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '32px'
+            }}>
+              <h1 style={{
+                margin: 0,
+                fontSize: '32px',
+                fontWeight: 'bold',
+                color: '#003057'
+              }}>
+                Equipe GEEE
+              </h1>
               {(currentUser?.role === UserRole.COORDINATOR) && (
                 <button 
                   onClick={handleNewProject}
-                  className="text-[#003057] bg-[#FFCD00] px-6 py-3 rounded-xl hover:bg-[#ffe052] font-black transition-all shadow-md shadow-black/5"
+                  style={{
+                    backgroundColor: '#FFCD00',
+                    color: '#003057',
+                    padding: '12px 24px',
+                    borderRadius: '10px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '13px',
+                    fontWeight: 'bold',
+                    letterSpacing: '0.5px',
+                    textTransform: 'uppercase',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#ffe052';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = '#FFCD00';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
                 >
                   + NOVO PROJETO
                 </button>
@@ -103,7 +190,7 @@ const MainApp: React.FC = () => {
 
   return (
     <Layout activeTab={activeTab} setActiveTab={(tab) => { setActiveTab(tab); setShowForm(false); }}>
-      <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+      <div style={{ animation: 'fadeIn 0.5s ease-in' }}>
         {renderContent()}
       </div>
     </Layout>
