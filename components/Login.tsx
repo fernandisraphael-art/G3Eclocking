@@ -1,31 +1,41 @@
-
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
+import { useMsal } from '@azure/msal-react';
 import { useApp } from '../store';
+import { INITIAL_USERS } from '../constants';
 
 const Login: React.FC = () => {
-  const { users, setCurrentUser } = useApp();
-  const [username, setUsername] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const { accounts, inProgress } = useMsal();
+  const { currentUser, setCurrentUser, users } = useApp();
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setIsLoading(true);
+  useEffect(() => {
+    if (accounts && accounts.length > 0) {
+      const account = accounts[0];
+      const email = account.username || '';
+      const displayName = account.name || 'Usuário';
 
-    setTimeout(() => {
-      const user = users.find(u => 
-        u.name.toLowerCase() === username.trim().toLowerCase()
-      );
+      // Tenta encontrar o usuário no sistema pelo email
+      const existingUser = users.find(u => u.email?.toLowerCase() === email.toLowerCase());
 
-      if (user) {
-        setCurrentUser(user);
+      if (existingUser) {
+        setCurrentUser(existingUser);
       } else {
-        setError('Colaborador não encontrado. Verifique se o nome está correto.');
-        setIsLoading(false);
+        // Se não encontrar, cria um novo usuário com dados do Microsoft
+        const newUser = {
+          id: account.localAccountId || `ms-${Date.now()}`,
+          name: displayName,
+          email: email,
+          role: 'Colaborador' as any,
+          active: true,
+        };
+        setCurrentUser(newUser);
       }
-    }, 800);
-  };
+    }
+  }, [accounts]);
+
+  // Se já está autenticado, mostra loading
+  if (currentUser) {
+    return null;
+  }
 
   return (
     <div style={{
@@ -33,219 +43,152 @@ const Login: React.FC = () => {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      background: 'linear-gradient(135deg, #003057 0%, #004d7a 100%)',
+      background: 'linear-gradient(135deg, #003057 0%, #0047a3 100%)',
+      fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
       padding: '16px',
-      position: 'relative',
-      overflow: 'hidden'
     }}>
       <div style={{
-        width: '100%',
+        backgroundColor: 'white',
+        borderRadius: '24px',
+        padding: '48px',
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
         maxWidth: '400px',
-        position: 'relative',
-        zIndex: 10
+        width: '100%',
       }}>
+        {/* Logo */}
         <div style={{
-          background: 'rgba(255, 255, 255, 0.95)',
-          padding: '40px',
-          borderRadius: '24px',
-          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
-          border: '1px solid rgba(255, 255, 255, 0.2)'
+          marginBottom: '32px',
+          textAlign: 'center',
         }}>
           <div style={{
-            textAlign: 'center',
-            marginBottom: '40px'
+            fontSize: '48px',
+            marginBottom: '16px',
           }}>
-            <h1 style={{
-              fontSize: '32px',
-              fontWeight: 'black',
-              color: '#003057',
-              margin: '0 0 12px 0',
-              textTransform: 'uppercase',
-              letterSpacing: '1px'
-            }}>
-              G3Eclocking
-            </h1>
-            <div style={{
-              height: '4px',
-              width: '48px',
-              background: '#FFCD00',
-              margin: '12px auto',
-              borderRadius: '2px'
-            }} />
-            <p style={{
-              color: '#003057',
-              fontSize: '12px',
-              marginTop: '16px',
-              fontWeight: 'bold',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-              opacity: 0.6
-            }}>
-              Portal de Apontamento de Horas
-            </p>
+            ⏱️
           </div>
-
-          {error && (
-            <div style={{
-              marginBottom: '24px',
-              padding: '16px',
-              background: '#fee2e2',
-              border: '1px solid #fca5a5',
-              borderRadius: '12px',
-              color: '#dc2626',
-              fontSize: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              animation: 'shake 0.3s ease-in-out'
-            }}>
-              <span style={{ fontSize: '20px' }}>⚠️</span>
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleLogin} style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '24px'
+          <h1 style={{
+            margin: '0 0 8px 0',
+            fontSize: '24px',
+            fontWeight: 'bold',
+            color: '#003057',
           }}>
-            <div>
-              <label style={{
-                display: 'block',
-                fontSize: '11px',
-                fontWeight: 'bold',
-                color: '#003057',
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-                marginBottom: '8px',
-                marginLeft: '4px',
-                opacity: 0.7
-              }}>
-                Identificação do Colaborador
-              </label>
-              <div style={{ position: 'relative' }}>
-                <input
-                  type="text"
-                  required
-                  autoFocus
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Nome Completo"
-                  style={{
-                    width: '100%',
-                    padding: '16px 16px 16px 40px',
-                    background: 'rgba(0, 48, 87, 0.05)',
-                    border: '2px solid #e5e7eb',
-                    borderRadius: '12px',
-                    fontSize: '14px',
-                    color: '#003057',
-                    fontWeight: '500',
-                    outline: 'none',
-                    transition: 'all 0.2s ease',
-                    boxSizing: 'border-box'
-                  }}
-                  onFocus={(e) => {
-                    e.currentTarget.style.borderColor = '#FFCD00';
-                    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 205, 0, 0.1)';
-                  }}
-                  onBlur={(e) => {
-                    e.currentTarget.style.borderColor = '#e5e7eb';
-                    e.currentTarget.style.boxShadow = 'none';
-                  }}
-                />
-                <span style={{
-                  position: 'absolute',
-                  left: '12px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  fontSize: '18px'
-                }}>
-                  👤
-                </span>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              style={{
-                width: '100%',
-                background: isLoading ? '#FFCD00' : '#003057',
-                color: isLoading ? '#003057' : 'white',
-                padding: '16px',
-                borderRadius: '12px',
-                fontWeight: 'bold',
-                fontSize: '14px',
-                border: 'none',
-                cursor: isLoading ? 'not-allowed' : 'pointer',
-                boxShadow: '0 4px 12px rgba(0, 48, 87, 0.2)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-                transition: 'all 0.2s ease',
-                opacity: isLoading ? 0.8 : 1,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px'
-              }}
-              onMouseEnter={(e) => {
-                if (!isLoading) {
-                  e.currentTarget.style.background = '#FFCD00';
-                  e.currentTarget.style.color = '#003057';
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isLoading) {
-                  e.currentTarget.style.background = '#003057';
-                  e.currentTarget.style.color = 'white';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }
-              }}
-            >
-              {isLoading ? (
-                <>
-                  <span style={{
-                    display: 'inline-block',
-                    width: '16px',
-                    height: '16px',
-                    border: '3px solid rgba(0, 48, 87, 0.3)',
-                    borderTop: '3px solid #003057',
-                    borderRadius: '50%',
-                    animation: 'spin 0.6s linear infinite'
-                  }} />
-                  Entrando...
-                </>
-              ) : (
-                'Entrar no Sistema'
-              )}
-            </button>
-          </form>
+            G3Eclocking
+          </h1>
+          <p style={{
+            margin: '0 0 24px 0',
+            color: '#6b7280',
+            fontSize: '13px',
+          }}>
+            Gestão de Horas - MRS Logística
+          </p>
         </div>
 
-        <p style={{
-          marginTop: '32px',
-          textAlign: 'center',
-          color: 'rgba(255, 255, 255, 0.4)',
-          fontSize: '10px',
-          fontWeight: 'bold',
-          textTransform: 'uppercase',
-          letterSpacing: '0.5px'
+        {/* Informações */}
+        <div style={{
+          backgroundColor: '#f0f9ff',
+          border: '1px solid #0ea5e9',
+          borderRadius: '12px',
+          padding: '16px',
+          marginBottom: '24px',
+          fontSize: '13px',
+          color: '#0369a1',
+          lineHeight: '1.6',
         }}>
-          © {new Date().getFullYear()} MRS Logística S.A. - Engenharia Eletroeletrônica
-        </p>
-      </div>
+          <strong>🔐 Autenticação via Microsoft</strong><br/>
+          Use sua conta Office 365 da MRS Logística para acessar o sistema.
+        </div>
 
-      <style>{`
-        @keyframes shake {
-          0%, 100% { transform: translateX(0); }
-          25% { transform: translateX(-4px); }
-          75% { transform: translateX(4px); }
-        }
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
+        {/* Botão Microsoft Login */}
+        <button
+          disabled={inProgress !== 'none'}
+          style={{
+            width: '100%',
+            padding: '12px 24px',
+            backgroundColor: '#0078d4',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            fontSize: '14px',
+            fontWeight: '600',
+            cursor: inProgress !== 'none' ? 'not-allowed' : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            opacity: inProgress !== 'none' ? 0.6 : 1,
+            transition: 'all 0.2s',
+          }}
+          onMouseEnter={(e) => {
+            if (inProgress === 'none') {
+              e.currentTarget.style.backgroundColor = '#106ebe';
+              e.currentTarget.style.transform = 'translateY(-2px)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = '#0078d4';
+            e.currentTarget.style.transform = 'translateY(0)';
+          }}
+        >
+          <span style={{ fontSize: '18px' }}>🔐</span>
+          {inProgress === 'none' ? 'Entrar com Microsoft' : 'Conectando...'}
+        </button>
+
+        {/* Nota sobre configuração */}
+        <div style={{
+          marginTop: '24px',
+          padding: '12px',
+          backgroundColor: '#fef3c7',
+          borderRadius: '8px',
+          fontSize: '12px',
+          color: '#92400e',
+          border: '1px solid #fcd34d',
+        }}>
+          <strong>⚙️ Configuração necessária:</strong><br/>
+          Para usar este login, você precisa configurar uma aplicação no Azure AD. Veja o arquivo <code style={{backgroundColor: '#fff', padding: '2px 6px', borderRadius: '4px'}}>config/authConfig.ts</code> para instruções.
+        </div>
+
+        {/* Teste Local - Remover em Produção */}
+        <div style={{
+          marginTop: '24px',
+          paddingTop: '24px',
+          borderTop: '1px solid #e5e7eb',
+        }}>
+          <p style={{
+            margin: '0 0 12px 0',
+            fontSize: '12px',
+            color: '#6b7280',
+            textAlign: 'center',
+          }}>
+            Modo de teste (remover em produção)
+          </p>
+          <select
+            onChange={(e) => {
+              const user = INITIAL_USERS.find(u => u.id === e.target.value);
+              if (user) {
+                setCurrentUser(user);
+              }
+            }}
+            style={{
+              width: '100%',
+              padding: '10px 12px',
+              fontSize: '13px',
+              border: '1px solid #e5e7eb',
+              borderRadius: '8px',
+              fontFamily: 'inherit',
+              backgroundColor: 'white',
+              boxSizing: 'border-box',
+              color: '#6b7280',
+            }}
+          >
+            <option value="">Selecione um usuário de teste</option>
+            {INITIAL_USERS.map(user => (
+              <option key={user.id} value={user.id}>
+                {user.name} ({user.role})
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
     </div>
   );
 };
