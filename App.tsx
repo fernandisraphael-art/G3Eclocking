@@ -7,6 +7,7 @@ import TimeEntryForm from './components/TimeEntryForm';
 import LogList from './components/LogList';
 import Dashboard from './components/Dashboard';
 import Team from './components/Team';
+import GestaoRecursos from './components/GestaoRecursos';
 import { UserRole } from './types';
 
 const MainApp: React.FC = () => {
@@ -167,6 +168,8 @@ const MainApp: React.FC = () => {
         );
       case 'team':
         return <Team />;
+      case 'resources':
+        return <GestaoRecursos />;
       case 'reports':
         return <Dashboard />;
       default:

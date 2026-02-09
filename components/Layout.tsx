@@ -14,10 +14,11 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab }) =>
 
   if (!currentUser) return null;
 
-  const navItems = [
+    const navItems = [
     { id: 'my-day', label: 'Meu Dia', icon: 'M', roles: [UserRole.COLLABORATOR, UserRole.COORDINATOR] },
     { id: 'history', label: 'Minhas Horas', icon: 'H', roles: [UserRole.COLLABORATOR, UserRole.COORDINATOR] },
     { id: 'team', label: 'Equipe', roles: [UserRole.COORDINATOR, UserRole.DIRECTOR], icon: 'E' },
+    { id: 'resources', label: 'Gestão Recursos', roles: [UserRole.COORDINATOR, UserRole.DIRECTOR], icon: 'P' },
     { id: 'reports', label: 'Administrativo', roles: [UserRole.COORDINATOR, UserRole.DIRECTOR], icon: 'A' },
   ];
 

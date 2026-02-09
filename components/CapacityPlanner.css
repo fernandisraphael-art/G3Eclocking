@@ -1,0 +1,30 @@
+/* Styles for CapacityPlanner */
+.planner-root{background:white;border-radius:10px;padding:16px;box-shadow:0 6px 20px rgba(0,0,0,0.06)}
+.planner-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.planner-header h2{margin:0;color:#003057}
+.planner-actions{display:flex;gap:12px;align-items:center}
+.btn{padding:8px 12px;border-radius:8px;background:#FFCD00;border:none;color:#003057;font-weight:800;cursor:pointer}
+.legend{font-size:13px;color:#6b7280}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
+.dot.blue{background:#2563eb}
+.dot.green{background:#10b981}
+.planner-grid{overflow:auto}
+.grid-header{display:flex;border-bottom:1px solid #eef2f7;padding-bottom:8px}
+.grid-body{display:flex;flex-direction:column}
+.grid-row{display:flex;align-items:flex-start;border-bottom:1px solid #f6f9fb}
+.grid-cell{padding:8px;border-right:1px solid #f1f5f9}
+.resource-col{min-width:220px;background:#fff;padding:12px}
+.days-col{flex:1;overflow:auto}
+.day-col{display:inline-block;min-width:160px;padding:8px 12px;text-align:center;color:#6b7280}
+.days-inner{position:relative;height:120px}
+.bg-day{display:inline-block;height:100%;float:left;border-right:1px solid #f1f5f9}
+.task.abs{position:absolute;top:12px;height:48px;background:#2563eb;color:white;border-radius:8px;display:flex;align-items:center;box-shadow:0 6px 18px rgba(37,99,235,0.12);cursor:grab;padding:6px}
+.task.abs .task-content{display:flex;justify-content:space-between;gap:8px;width:100%;align-items:center}
+.task.abs .task-project{font-weight:700;font-size:13px}
+.task.abs .task-hours{font-size:12px;opacity:0.9}
+.resizer{width:10px;cursor:ew-resize;height:100%;background:rgba(0,0,0,0.08);border-top-right-radius:8px;border-bottom-right-radius:8px}
+.task.dragging{opacity:0.65;transform:scale(0.98);box-shadow:0 12px 30px rgba(0,0,0,0.15)}
+.over{background:linear-gradient(180deg,#fff0f0,#fff)}
+.task-project{font-size:12px;font-weight:700}
+.task-hours{font-size:12px;opacity:0.9}
+.over{background:linear-gradient(180deg,#fff0f0,#fff)}

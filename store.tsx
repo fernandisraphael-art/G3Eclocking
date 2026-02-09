@@ -6,6 +6,10 @@ import { INITIAL_USERS, INITIAL_PROJECTS, ACTIVITIES_SEED } from './constants';
 interface AppContextType extends AppState {
   setCurrentUser: (user: User | null) => void;
   login: (user: User) => void;
+  allocations: any[];
+  addAllocation: (alloc: { project: string; resourceId: string; day: number; hours: number; }) => string;
+  updateAllocation: (id: string, updates: Partial<{ project: string; resourceId: string; day: number; hours: number; }>) => void;
+  deleteAllocation: (id: string) => void;
   addLog: (log: Omit<TimeLog, 'id' | 'createdAt' | 'updatedAt' | 'collaboratorId' | 'collaboratorName'>) => string | null;
   updateLog: (id: string, updates: Partial<TimeLog>) => void;
   deleteLog: (id: string) => void;
@@ -70,6 +74,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return saved ? JSON.parse(saved) : INITIAL_PROJECTS;
   });
 
+  const [allocations, setAllocations] = useState<any[]>(() => {
+    const saved = localStorage.getItem('g3eclocking_allocations');
+    return saved ? JSON.parse(saved) : [];
+  });
+
   useEffect(() => {
     localStorage.setItem('g3eclocking_user', JSON.stringify(currentUser));
   }, [currentUser]);
@@ -81,6 +90,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     localStorage.setItem('g3eclocking_projects', JSON.stringify(projects));
   }, [projects]);
+
+  useEffect(() => {
+    localStorage.setItem('g3eclocking_allocations', JSON.stringify(allocations));
+  }, [allocations]);
 
   const addLog = (data: any) => {
     if (!currentUser) return null;
@@ -134,10 +147,78 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setProjects(prev => [...prev, newProject]);
   };
 
+  const addLogForUser = (data: Omit<TimeLog, 'id' | 'createdAt' | 'updatedAt'>) => {
+    // Similar checks to addLog but allows specifying collaboratorId
+    const { collaboratorId, date, projectId, activityType, hours } = data as any;
+    if (!collaboratorId) return 'collaboratorId required';
+
+    const dayLogs = logs.filter(l => l.collaboratorId === collaboratorId && l.date === date);
+    const dailyTotal = dayLogs.reduce((acc, curr) => acc + curr.hours, 0);
+    if (dailyTotal + (hours || 0) > 24) {
+      return "O total de horas por dia não pode exceder 24h.";
+    }
+
+    const duplicate = logs.find(l => l.collaboratorId === collaboratorId && l.date === date && l.projectId === projectId && l.activityType === activityType);
+    if (duplicate) return 'duplicated';
+
+    const newLog: TimeLog = {
+      ...data,
+      id: Math.random().toString(36).substr(2, 9),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    } as TimeLog;
+
+    setLogs(prev => [newLog, ...prev]);
+    return null;
+  };
+
+  const syncAllocationsToLogs = () => {
+    // allocations: { id, project, resourceId, day, hours, spanDays? }
+    const base = new Date();
+    let created = 0;
+    allocations.forEach(a => {
+      const date = new Date(base);
+      date.setDate(base.getDate() + (a.day || 0));
+      const iso = date.toISOString().split('T')[0];
+      const exists = logs.find(l => l.collaboratorId === a.resourceId && l.date === iso && l.projectId === a.project && l.activityType === 'alocacao');
+      if (!exists) {
+        const res = addLogForUser({
+          collaboratorId: a.resourceId,
+          collaboratorName: INITIAL_USERS.find(u => u.id === a.resourceId)?.name || 'Usuário',
+          date: iso,
+          demandType: (Object as any).values === undefined ? undefined as any : undefined as any,
+          projectId: a.project,
+          projectName: a.project,
+          phase: 'NA' as any,
+          activityType: 'alocacao',
+          hours: a.hours || 0,
+        } as any);
+        if (res === null) created++;
+      }
+    });
+    return created;
+  };
+
+  const addAllocation = (alloc: { project: string; resourceId: string; day: number; hours: number; }) => {
+    const newAlloc = { id: `a-${Math.random().toString(36).substr(2, 6)}`, ...alloc };
+    setAllocations(prev => [newAlloc, ...prev]);
+    return newAlloc.id;
+  };
+
+  const updateAllocation = (id: string, updates: Partial<{ project: string; resourceId: string; day: number; hours: number; }>) => {
+    setAllocations(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
+  };
+
+  const deleteAllocation = (id: string) => {
+    setAllocations(prev => prev.filter(a => a.id !== id));
+  };
+
   return (
     <AppContext.Provider value={{
       currentUser, users: INITIAL_USERS, projects, activities: ACTIVITIES_SEED, logs,
-      setCurrentUser, login: setCurrentUser, addLog, updateLog, deleteLog, addProject
+      setCurrentUser, login: setCurrentUser, addLog, updateLog, deleteLog, addProject,
+      allocations, addAllocation, updateAllocation, deleteAllocation,
+      addLogForUser, syncAllocationsToLogs
     }}>
       {children}
     </AppContext.Provider>

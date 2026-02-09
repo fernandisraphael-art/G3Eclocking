@@ -19,12 +19,14 @@ import { PublicClientApplication, LogLevel } from '@azure/msal-browser';
  *    - Microsoft Graph > mail.send (para enviar lembretes)
  */
 
-// SUBSTITUIR COM SEU CLIENT ID DO AZURE
-const CLIENT_ID = 'YOUR_AZURE_CLIENT_ID_HERE';
+// Tenta usar variável de ambiente, caso contrário usa um Client ID genérico para modo de desenvolvimento
+const CLIENT_ID = import.meta.env.VITE_AZURE_CLIENT_ID || '04b07795-8ddb-461a-bbee-02f9e1bf7b46'; // Client ID de teste (Microsoft Graph Explorer)
 const AUTHORITY = 'https://login.microsoftonline.com/common';
-const REDIRECT_URI = process.env.NODE_ENV === 'production' 
-  ? 'https://seu-dominio.com' 
-  : 'http://localhost:3003';
+const REDIRECT_URI = import.meta.env.VITE_AZURE_REDIRECT_URI || (
+  import.meta.env.MODE === 'production' 
+    ? 'https://seu-dominio.com' 
+    : 'http://localhost:3001'
+);
 
 export const msalConfig = {
   auth: {
