@@ -3,11 +3,12 @@ import React from "react";
 interface LogListProps {
   logs?: any[];
   onEdit?: (log: any) => void;
+  onDelete?: (logId: string) => void;
   title?: string;
   showFilters?: boolean;
 }
 
-const LogList: React.FC<LogListProps> = ({ logs = [], onEdit, title = "Apontamentos", showFilters = true }) => {
+const LogList: React.FC<LogListProps> = ({ logs = [], onEdit, onDelete, title = "Apontamentos", showFilters = true }) => {
   const getActivityColor = (activity: string) => {
     const colors: { [key: string]: string } = {
       'revisao': '#fbbf24',
@@ -16,6 +17,16 @@ const LogList: React.FC<LogListProps> = ({ logs = [], onEdit, title = "Apontamen
       'testes': '#3b82f6',
     };
     return colors[activity?.toLowerCase()] || '#fbbf24';
+  };
+
+  const formatDateBR = (dateValue?: string) => {
+    if (!dateValue) return '-';
+    const parts = dateValue.split('-');
+    if (parts.length === 3) {
+      const [year, month, day] = parts;
+      return `${day}/${month}/${year}`;
+    }
+    return dateValue;
   };
 
   return (
@@ -108,81 +119,66 @@ const LogList: React.FC<LogListProps> = ({ logs = [], onEdit, title = "Apontamen
               <div style={{ flex: 1 }}>
                 <div style={{
                   display: 'flex',
-                  gap: '24px',
-                  marginBottom: '12px'
-                }}>
-                  {/* Projeto */}
-                  <div>
-                    <p style={{
-                      margin: '0 0 2px 0',
-                      fontSize: '11px',
-                      color: '#a0b0c0',
-                      fontWeight: '600',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.5px'
-                    }}>
-                      Projeto
-                    </p>
-                    <p style={{
-                      margin: 0,
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      color: '#003057'
-                    }}>
-                      {log.projectName || 'Sem projeto'}
-                    </p>
-                  </div>
-
-                  {/* Data */}
-                  <div>
-                    <p style={{
-                      margin: '0 0 2px 0',
-                      fontSize: '11px',
-                      color: '#a0b0c0',
-                      fontWeight: '600',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.5px'
-                    }}>
-                      Data
-                    </p>
-                    <p style={{
-                      margin: 0,
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      color: '#003057'
-                    }}>
-                      {log.date}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Linha do Projeto Completo */}
-                <div style={{
-                  display: 'flex',
                   alignItems: 'center',
-                  gap: '8px',
-                  marginBottom: '8px'
+                  justifyContent: 'space-between',
+                  marginBottom: '12px'
                 }}>
                   <p style={{
                     margin: 0,
-                    fontSize: '14px',
-                    fontWeight: '600',
+                    fontSize: '15px',
+                    fontWeight: '700',
                     color: '#003057'
                   }}>
                     {log.projectName || 'Sem projeto'}
                   </p>
                   <span style={{
                     fontSize: '12px',
-                    color: '#a0b0c0',
-                    fontWeight: '600',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
+                    color: '#64748b',
+                    fontWeight: '600'
                   }}>
-                    {log.phase || 'FASE: N/A'}
+                    {formatDateBR(log.date)}
                   </span>
                 </div>
 
-                {/* Descrição com ponto colorido */}
+                <div style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  alignItems: 'center',
+                  gap: '8px',
+                  marginBottom: '8px'
+                }}>
+                  <span style={{
+                    fontSize: '11px',
+                    color: '#334155',
+                    backgroundColor: '#f1f5f9',
+                    borderRadius: '999px',
+                    padding: '4px 10px',
+                    fontWeight: '600'
+                  }}>
+                    Fase: {log.phase || 'N/A'}
+                  </span>
+                  <span style={{
+                    fontSize: '11px',
+                    color: '#334155',
+                    backgroundColor: '#f1f5f9',
+                    borderRadius: '999px',
+                    padding: '4px 10px',
+                    fontWeight: '600'
+                  }}>
+                    Demanda: {log.demandType || 'N/A'}
+                  </span>
+                  <span style={{
+                    fontSize: '11px',
+                    color: '#334155',
+                    backgroundColor: '#f8fafc',
+                    borderRadius: '999px',
+                    padding: '4px 10px',
+                    fontWeight: '600'
+                  }}>
+                    Atividade: {log.activityType || 'N/A'}
+                  </span>
+                </div>
+
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -202,39 +198,25 @@ const LogList: React.FC<LogListProps> = ({ logs = [], onEdit, title = "Apontamen
                     color: '#64748b',
                     fontWeight: '500'
                   }}>
-                    "{log.description || log.activityType || 'Sem descrição'}"
+                    "{log.observation || log.description || 'Sem observação'}"
                   </p>
                 </div>
 
-                {/* Atividade com Badge */}
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '6px'
+                  gap: '6px',
+                  marginTop: '4px'
                 }}>
-                  <div style={{
-                    width: '24px',
-                    height: '24px',
-                    borderRadius: '4px',
-                    backgroundColor: '#e5e7eb',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '12px',
-                    fontWeight: '600',
-                    color: '#a0b0c0'
-                  }}>
-                    A
-                  </div>
                   <p style={{
                     margin: 0,
                     fontSize: '12px',
-                    color: '#a0b0c0',
+                    color: '#94a3b8',
                     fontWeight: '600',
                     textTransform: 'uppercase',
                     letterSpacing: '0.5px'
                   }}>
-                    {log.collaboratorName || 'Abner Orra'}
+                    {log.collaboratorName || 'Usuário'}
                   </p>
                 </div>
               </div>
@@ -274,6 +256,7 @@ const LogList: React.FC<LogListProps> = ({ logs = [], onEdit, title = "Apontamen
                   </button>
                 )}
                 <button
+                  onClick={() => onDelete?.(log.id)}
                   style={{
                     padding: '6px 12px',
                     backgroundColor: 'transparent',

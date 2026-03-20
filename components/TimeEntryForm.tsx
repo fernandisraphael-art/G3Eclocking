@@ -9,17 +9,18 @@ interface TimeEntryFormProps {
 }
 
 const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ editLog, onSuccess, onCancel }) => {
-  const { currentUser, addLog, projects } = useApp();
+  const { currentUser, addLog, updateLog, projects } = useApp();
+  const isEditing = Boolean(editLog?.id);
   const today = new Date().toISOString().split('T')[0];
   
   const [formData, setFormData] = useState({
-    data: editLog?.data || today,
+    data: editLog?.date || editLog?.data || today,
     demandType: editLog?.demandType || DEMAND_TYPES[0],
     projectId: editLog?.projectId || '',
     phase: editLog?.phase || '',
     activityType: editLog?.activityType || ACTIVITIES_SEED[0],
     hours: editLog?.hours?.toString() || '',
-    observation: editLog?.observation || '',
+    observation: editLog?.observation || editLog?.description || '',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -58,30 +59,36 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ editLog, onSuccess, onCan
     if (!validateForm() || !currentUser) return;
 
     const selectedProject = projects.find(p => p.id === formData.projectId);
-    const newLog = {
-      collaboratorId: currentUser.id,
-      collaboratorName: currentUser.name,
+    const payload = {
       date: formData.data,
       demandType: formData.demandType,
       projectId: formData.projectId,
-      projectName: selectedProject?.name || '',
+      projectName: selectedProject?.name || editLog?.projectName || '',
       phase: formData.phase,
       activityType: formData.activityType,
       hours: parseFloat(formData.hours),
       observation: formData.observation,
     };
 
-    addLog(newLog);
+    if (isEditing && editLog?.id) {
+      updateLog(editLog.id, payload);
+    } else {
+      const addLogResult = addLog(payload as any);
+      if (typeof addLogResult === 'string') {
+        alert(addLogResult);
+        return;
+      }
 
-    setFormData({
-      data: today,
-      demandType: DEMAND_TYPES[0],
-      projectId: '',
-      phase: '',
-      activityType: ACTIVITIES_SEED[0],
-      hours: '',
-      observation: '',
-    });
+      setFormData({
+        data: today,
+        demandType: DEMAND_TYPES[0],
+        projectId: '',
+        phase: '',
+        activityType: ACTIVITIES_SEED[0],
+        hours: '',
+        observation: '',
+      });
+    }
 
     if (onSuccess) {
       onSuccess();
@@ -117,13 +124,13 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ editLog, onSuccess, onCan
             color: '#003057',
             marginBottom: '8px',
           }}>
-            Novo Lançamento
+            {isEditing ? 'Editar Apontamento' : 'Novo Lançamento'}
           </h2>
           <p style={{
             color: '#6b7280',
             fontSize: '14px',
           }}>
-            Registre suas horas de trabalho
+            {isEditing ? 'Atualize as informações do lançamento' : 'Registre suas horas de trabalho'}
           </p>
         </div>
 
@@ -449,7 +456,7 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ editLog, onSuccess, onCan
                 e.currentTarget.style.backgroundColor = '#003057';
               }}
             >
-              Registrar
+              {isEditing ? 'Salvar alterações' : 'Registrar'}
             </button>
           </div>
         </form>

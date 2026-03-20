@@ -6,14 +6,20 @@ import { INITIAL_USERS, INITIAL_PROJECTS, ACTIVITIES_SEED } from './constants';
 interface AppContextType extends AppState {
   setCurrentUser: (user: User | null) => void;
   login: (user: User) => void;
+  addUser: (data: { name: string; email?: string; role: User['role']; active?: boolean; }) => string;
+  updateUser: (id: string, updates: Partial<User>) => void;
+  toggleUserStatus: (id: string) => void;
+  removeUser: (id: string) => void;
   allocations: any[];
-  addAllocation: (alloc: { project: string; resourceId: string; day: number; hours: number; }) => string;
-  updateAllocation: (id: string, updates: Partial<{ project: string; resourceId: string; day: number; hours: number; }>) => void;
+  addAllocation: (alloc: { project: string; resourceId: string; day: number; hours: number; spanDays?: number; }) => string;
+  updateAllocation: (id: string, updates: Partial<{ project: string; resourceId: string; day: number; hours: number; spanDays?: number; }>) => void;
   deleteAllocation: (id: string) => void;
   addLog: (log: Omit<TimeLog, 'id' | 'createdAt' | 'updatedAt' | 'collaboratorId' | 'collaboratorName'>) => string | null;
   updateLog: (id: string, updates: Partial<TimeLog>) => void;
   deleteLog: (id: string) => void;
   addProject: (name: string) => void;
+  addLogForUser: (data: Omit<TimeLog, 'id' | 'createdAt' | 'updatedAt'>) => string | null;
+  syncAllocationsToLogs: () => number;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -74,6 +80,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return saved ? JSON.parse(saved) : INITIAL_PROJECTS;
   });
 
+  const [users, setUsers] = useState<User[]>(() => {
+    const saved = localStorage.getItem('g3eclocking_users');
+    return saved ? JSON.parse(saved) : INITIAL_USERS;
+  });
+
   const [allocations, setAllocations] = useState<any[]>(() => {
     const saved = localStorage.getItem('g3eclocking_allocations');
     return saved ? JSON.parse(saved) : [];
@@ -90,6 +101,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     localStorage.setItem('g3eclocking_projects', JSON.stringify(projects));
   }, [projects]);
+
+  useEffect(() => {
+    localStorage.setItem('g3eclocking_users', JSON.stringify(users));
+  }, [users]);
 
   useEffect(() => {
     localStorage.setItem('g3eclocking_allocations', JSON.stringify(allocations));
@@ -147,6 +162,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setProjects(prev => [...prev, newProject]);
   };
 
+  const addUser = (data: { name: string; email?: string; role: User['role']; active?: boolean; }) => {
+    const id = `u-${Math.random().toString(36).substr(2, 7)}`;
+    const newUser: User = {
+      id,
+      name: data.name,
+      email: data.email,
+      role: data.role,
+      active: data.active ?? true,
+    };
+    setUsers(prev => [newUser, ...prev]);
+    return id;
+  };
+
+  const updateUser = (id: string, updates: Partial<User>) => {
+    setUsers(prev => prev.map(u => (u.id === id ? { ...u, ...updates } : u)));
+  };
+
+  const toggleUserStatus = (id: string) => {
+    setUsers(prev => prev.map(u => (u.id === id ? { ...u, active: !u.active } : u)));
+  };
+
+  const removeUser = (id: string) => {
+    if (id === 'admin-id') return;
+    setUsers(prev => prev.filter(u => u.id !== id));
+  };
+
   const addLogForUser = (data: Omit<TimeLog, 'id' | 'createdAt' | 'updatedAt'>) => {
     // Similar checks to addLog but allows specifying collaboratorId
     const { collaboratorId, date, projectId, activityType, hours } = data as any;
@@ -199,13 +240,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return created;
   };
 
-  const addAllocation = (alloc: { project: string; resourceId: string; day: number; hours: number; }) => {
+  const addAllocation = (alloc: { project: string; resourceId: string; day: number; hours: number; spanDays?: number; }) => {
     const newAlloc = { id: `a-${Math.random().toString(36).substr(2, 6)}`, ...alloc };
     setAllocations(prev => [newAlloc, ...prev]);
     return newAlloc.id;
   };
 
-  const updateAllocation = (id: string, updates: Partial<{ project: string; resourceId: string; day: number; hours: number; }>) => {
+  const updateAllocation = (id: string, updates: Partial<{ project: string; resourceId: string; day: number; hours: number; spanDays?: number; }>) => {
     setAllocations(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
   };
 
@@ -215,8 +256,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   return (
     <AppContext.Provider value={{
-      currentUser, users: INITIAL_USERS, projects, activities: ACTIVITIES_SEED, logs,
-      setCurrentUser, login: setCurrentUser, addLog, updateLog, deleteLog, addProject,
+      currentUser, users, projects, activities: ACTIVITIES_SEED, logs,
+      setCurrentUser, login: setCurrentUser, addUser, updateUser, toggleUserStatus, removeUser,
+      addLog, updateLog, deleteLog, addProject,
       allocations, addAllocation, updateAllocation, deleteAllocation,
       addLogForUser, syncAllocationsToLogs
     }}>

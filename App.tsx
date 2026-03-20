@@ -11,10 +11,11 @@ import GestaoRecursos from './components/GestaoRecursos';
 import { UserRole } from './types';
 
 const MainApp: React.FC = () => {
-  const { currentUser, logs, addProject } = useApp();
+  const { currentUser, logs, addProject, deleteLog } = useApp();
   const [activeTab, setActiveTab] = useState('my-day');
   const [showForm, setShowForm] = useState(false);
   const [editingLog, setEditingLog] = useState<any>(null);
+  const [historyDateQuery, setHistoryDateQuery] = useState('');
 
   // Auto-redirect Admin/Director to Team page
   useEffect(() => {
@@ -30,10 +31,31 @@ const MainApp: React.FC = () => {
   const myLogs = logs.filter(l => l.collaboratorId === currentUser?.id);
   const today = new Date().toISOString().split('T')[0];
   const logsToday = myLogs.filter(l => l.date === today);
+  const normalizedHistoryDate = historyDateQuery.trim();
+
+  const filteredHistoryLogs = myLogs.filter(log => {
+    if (!normalizedHistoryDate) return true;
+
+    const ddmmyyyy = log.date.split('-').reverse().join('/');
+    if (ddmmyyyy.includes(normalizedHistoryDate)) return true;
+
+    const exact = normalizedHistoryDate.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (!exact) return false;
+
+    const [, day, month, year] = exact;
+    const isoQuery = `${year}-${month}-${day}`;
+    return log.date === isoQuery;
+  });
 
   const handleEdit = (log: any) => {
     setEditingLog(log);
     setShowForm(true);
+  };
+
+  const handleDelete = (logId: string) => {
+    const confirmed = confirm('Deseja realmente excluir este apontamento?');
+    if (!confirmed) return;
+    deleteLog(logId);
   };
 
   const handleNewProject = () => {
@@ -129,7 +151,7 @@ const MainApp: React.FC = () => {
                 LANÇAR HORAS
               </button>
             </div>
-            <LogList logs={logsToday} onEdit={handleEdit} title="Apontamentos de Hoje" showFilters={false} />
+            <LogList logs={logsToday} onEdit={handleEdit} onDelete={handleDelete} title="Apontamentos de Hoje" showFilters={false} />
           </div>
         );
       case 'history':
@@ -152,6 +174,8 @@ const MainApp: React.FC = () => {
               <input
                 type="text"
                 placeholder="dd/mm/aaaa"
+                value={historyDateQuery}
+                onChange={(e) => setHistoryDateQuery(e.target.value)}
                 style={{
                   padding: '10px 16px',
                   border: '1px solid #e5e7eb',
@@ -163,7 +187,7 @@ const MainApp: React.FC = () => {
                 }}
               />
             </div>
-            <LogList logs={myLogs} onEdit={handleEdit} title="" />
+            <LogList logs={filteredHistoryLogs} onEdit={handleEdit} onDelete={handleDelete} title="" />
           </div>
         );
       case 'team':

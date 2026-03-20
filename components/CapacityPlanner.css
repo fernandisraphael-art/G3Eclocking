@@ -14,16 +14,19 @@
 .grid-row{display:flex;align-items:flex-start;border-bottom:1px solid #f6f9fb}
 .grid-cell{padding:8px;border-right:1px solid #f1f5f9}
 .resource-col{min-width:220px;background:#fff;padding:12px}
-.days-col{flex:1;overflow:auto}
-.day-col{display:inline-block;min-width:160px;padding:8px 12px;text-align:center;color:#6b7280}
+.days-col{flex:1;overflow-x:auto;overflow-y:hidden}
+.day-track{display:flex;flex-wrap:nowrap}
+.day-col{display:flex;align-items:center;justify-content:center;flex:0 0 160px;min-width:160px;padding:8px 12px;text-align:center;color:#6b7280;white-space:nowrap;box-sizing:border-box}
 .days-inner{position:relative;height:120px}
 .bg-day{display:inline-block;height:100%;float:left;border-right:1px solid #f1f5f9}
-.task.abs{position:absolute;top:12px;height:48px;background:#2563eb;color:white;border-radius:8px;display:flex;align-items:center;box-shadow:0 6px 18px rgba(37,99,235,0.12);cursor:grab;padding:6px}
+.task.abs{position:absolute;top:12px;height:48px;background:#2563eb;color:white;border-radius:8px;display:flex;align-items:center;box-shadow:0 6px 18px rgba(37,99,235,0.12);cursor:grab;padding:6px;transition:transform 0.15s ease}
+.task.abs{overflow:visible}
+.task-delete-hint{position:absolute;top:-8px;left:-8px;width:16px;height:16px;border-radius:999px;background:#ef4444;color:white;font-size:11px;line-height:16px;text-align:center;font-weight:700;box-shadow:0 2px 8px rgba(239,68,68,0.45)}
 .task.abs .task-content{display:flex;justify-content:space-between;gap:8px;width:100%;align-items:center}
 .task.abs .task-project{font-weight:700;font-size:13px}
 .task.abs .task-hours{font-size:12px;opacity:0.9}
 .resizer{width:10px;cursor:ew-resize;height:100%;background:rgba(0,0,0,0.08);border-top-right-radius:8px;border-bottom-right-radius:8px}
-.task.dragging{opacity:0.65;transform:scale(0.98);box-shadow:0 12px 30px rgba(0,0,0,0.15)}
+.task.dragging{opacity:1;cursor:grabbing;box-shadow:0 6px 18px rgba(37,99,235,0.12),0 0 20px rgba(37,99,235,0.2)}
 .over{background:linear-gradient(180deg,#fff0f0,#fff)}
 .task-project{font-size:12px;font-weight:700}
 .task-hours{font-size:12px;opacity:0.9}

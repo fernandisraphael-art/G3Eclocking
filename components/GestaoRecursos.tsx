@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import './GestaoRecursos.css';
 import CapacityPlanner from './CapacityPlanner';
+import { useApp } from '../store';
+import { UserRole } from '../types';
 
 interface Collaborator {
   id: string;
@@ -9,37 +11,44 @@ interface Collaborator {
   status: 'ATIVO' | 'INATIVO';
 }
 
-const NAMES = [
-  'Raphael','Abner Orra','Adalberto Kumagaia','Alan Wliam','Alexandre Meneghel','Antônio Leal','Barbara Diolindo',
-  'Guilherme Rodrigues','Hygor Teodoro','Iago Marques','Jesus Figueredo','João Paulo Rocha','Jonatas Cedro','Lucas Abreu',
-  'Marcio Moreira','Marcos Reinh','Paulo Henrique','Pedro Melo','Pedro Pinto','Pedro Santana','Rodrigo Gonçalves','Tiago Gomes',
-  'Tony Dornelas','Vinicius Rodrigues','Marcos Taninho'
-];
-
-const makeMock = (count = NAMES.length) => {
-  const profiles = ['Colaborador', 'Coordenador', 'Especialista IV', 'Diretoria/Visor'];
-  return Array.from({ length: count }).map((_, i) => ({
-    id: String(i + 1),
-    name: NAMES[i % NAMES.length],
-    profile: profiles[i % profiles.length],
-    status: i % 7 === 0 ? 'INATIVO' : 'ATIVO'
-  }));
-};
-
 const PAGE_SIZE = 6;
 
 const GestaoRecursos: React.FC = () => {
-  const [items, setItems] = useState<Collaborator[]>(() => makeMock());
+  const { users, addUser, updateUser, toggleUserStatus, removeUser } = useApp();
   const [query, setQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'TODOS' | 'ATIVO' | 'INATIVO'>('TODOS');
+  const [profileFilter, setProfileFilter] = useState('TODOS');
   const [page, setPage] = useState(1);
   const [editing, setEditing] = useState<Collaborator | null>(null);
   const [isModalOpen, setModalOpen] = useState(false);
   const [plannerOpen, setPlannerOpen] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const items = useMemo<Collaborator[]>(() => {
+    return users
+      .filter(u => u.id !== 'admin-id')
+      .map(u => ({
+        id: u.id,
+        name: u.name,
+        profile: u.role,
+        status: u.active ? 'ATIVO' : 'INATIVO',
+      }));
+  }, [users]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return items.filter(i => !q || i.name.toLowerCase().includes(q) || i.profile.toLowerCase().includes(q));
-  }, [items, query]);
+    return items.filter(i => {
+      const matchesText = !q || i.name.toLowerCase().includes(q) || i.profile.toLowerCase().includes(q);
+      const matchesStatus = statusFilter === 'TODOS' || i.status === statusFilter;
+      const matchesProfile = profileFilter === 'TODOS' || i.profile === profileFilter;
+      return matchesText && matchesStatus && matchesProfile;
+    });
+  }, [items, query, statusFilter, profileFilter]);
+
+  const profileOptions = useMemo(() => {
+    const uniqueProfiles = Array.from(new Set(items.map(i => i.profile)));
+    return uniqueProfiles.sort((a, b) => a.localeCompare(b));
+  }, [items]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
 
@@ -52,21 +61,71 @@ const GestaoRecursos: React.FC = () => {
   const saveItem = (payload: Collaborator) => {
     if (!payload.name.trim()) { alert('Nome é obrigatório'); return; }
     if (payload.id) {
-      setItems(prev => prev.map(p => p.id === payload.id ? payload : p));
+      updateUser(payload.id, {
+        name: payload.name,
+        role: payload.profile as UserRole,
+        active: payload.status === 'ATIVO',
+      });
     } else {
-      const nextId = String((Math.max(0, ...items.map(i => Number(i.id))) + 1));
-      setItems(prev => [{ ...payload, id: nextId }, ...prev]);
+      addUser({
+        name: payload.name,
+        role: payload.profile as UserRole,
+        active: payload.status === 'ATIVO',
+      });
     }
     setModalOpen(false);
     setEditing(null);
   };
 
   const toggleStatus = (id: string) => {
-    setItems(prev => prev.map(i => i.id === id ? { ...i, status: i.status === 'ATIVO' ? 'INATIVO' : 'ATIVO' } : i));
+    toggleUserStatus(id);
   };
 
   const remove = (id: string) => {
-    if (confirm('Remover colaborador?')) setItems(prev => prev.filter(i => i.id !== id));
+    if (confirm('Remover colaborador?')) removeUser(id);
+  };
+
+  const handleImportList = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const text = event.target?.result as string;
+        const lines = text.trim().split('\n');
+        let imported = 0;
+
+        lines.forEach((line, idx) => {
+          if (idx === 0 && (line.toLowerCase().includes('nome') || line.toLowerCase().includes('name'))) return;
+          
+          const parts = line.split(',').map(p => p.trim());
+          if (parts.length >= 2) {
+            const name = parts[0];
+            const profile = parts[1];
+            if (name) {
+              addUser({
+                name,
+                role: (profile || 'Colaborador') as UserRole,
+                active: true,
+              });
+              imported++;
+            }
+          }
+        });
+
+        alert(`${imported} colaborador(es) importado(s) com sucesso!`);
+        setPage(1);
+      } catch (error) {
+        alert('Erro ao importar arquivo. Verifique o formato.');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
   };
 
   return (
@@ -78,9 +137,27 @@ const GestaoRecursos: React.FC = () => {
         </div>
         <div className="gr-actions">
           <input className="gr-search" placeholder="Buscar nome ou perfil" value={query} onChange={e => { setQuery(e.target.value); setPage(1); }} />
-          <button className="btn btn-outline" onClick={() => alert('Importar lista...')}>IMPORTAR LISTA</button>
+          <select className="gr-search" value={statusFilter} onChange={e => { setStatusFilter(e.target.value as any); setPage(1); }}>
+            <option value="TODOS">Status: Todos</option>
+            <option value="ATIVO">Status: Ativos</option>
+            <option value="INATIVO">Status: Inativos</option>
+          </select>
+          <select className="gr-search" value={profileFilter} onChange={e => { setProfileFilter(e.target.value); setPage(1); }}>
+            <option value="TODOS">Perfil: Todos</option>
+            {profileOptions.map(profile => (
+              <option key={profile} value={profile}>{`Perfil: ${profile}`}</option>
+            ))}
+          </select>
+          <button className="btn btn-outline" onClick={handleImportList}>IMPORTAR LISTA</button>
           <button className="btn btn-outline" onClick={() => setPlannerOpen(true)}>CAPACITY PLANNER</button>
           <button className="btn btn-primary" onClick={openNew}>+ INCLUIR</button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv,.txt"
+            onChange={handleFileSelected}
+            style={{ display: 'none' }}
+          />
         </div>
       </div>
 
